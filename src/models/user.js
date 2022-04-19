@@ -10,19 +10,6 @@ import bcrypt from 'bcryptjs'
 import validator from 'validator'
 
 const schema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    validate: [/^[A-Za-z][A-Za-z0-9_-]{2,255}$/, 'Please provide a valid username.']
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: [10, 'The password must be at least 8 characters.'],
-    maxlength: [256, 'The password must be less than 256 characters.']
-  },
   firstName: {
     type: String,
     required: true,
@@ -43,7 +30,13 @@ const schema = new mongoose.Schema({
     unique: true,
     trim: true,
     validate: [validator.isEmail, 'Please provide a valid email address.']
-  }
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: [10, 'The password must be at least 8 characters.'],
+    maxlength: [256, 'The password must be less than 256 characters.']
+  },
 }, {
   timestamps: true,
   toJSON: {
@@ -77,8 +70,8 @@ schema.pre('save', async function () {
  * @param {string} password The password.
  * @returns {Promise} Resolves to a user object.
  */
-schema.statics.authenticate = async function (username, password) {
-  const user = await this.findOne({ username })
+schema.statics.authenticate = async function (email, password) {
+  const user = await this.findOne({ email })
   if (!user || !(await bcrypt.compare(password, user.password))) {
     throw new Error('Credentials invalid or not provided.')
   }

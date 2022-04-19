@@ -22,11 +22,10 @@ export class UsersController {
    */
   async login (req, res, next) {
     try {
-      const user = await User.authenticate(req.body.username, req.body.password)
+      const user = await User.authenticate(req.body.email, req.body.password)
 
       const payload = {
         sub: user.id,
-        username: user.username,
         given_name: user.firstName,
         family_name: user.lastName,
         email: user.email
@@ -59,7 +58,6 @@ export class UsersController {
   async register (req, res, next) {
     try {
       const user = new User({
-        username: req.body.username,
         password: req.body.password,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
