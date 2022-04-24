@@ -1,5 +1,5 @@
 /**
- * Module for the AccountController.
+ * Module for the UsersController.
  *
  * @author Emilia Hansson <eh222yn@student.lnu.se>
  * @version 1.0.0
@@ -25,10 +25,7 @@ export class UsersController {
       const user = await User.authenticate(req.body.email, req.body.password)
 
       const payload = {
-        sub: user.id,
-        given_name: user.firstName,
-        family_name: user.lastName,
-        email: user.email
+        sub: user.id
       }
 
       const accessToken = jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY_SECRET, 'base64').toString('ascii'), {
@@ -58,10 +55,8 @@ export class UsersController {
   async register (req, res, next) {
     try {
       const user = new User({
-        password: req.body.password,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email
+        email: req.body.email,
+        password: req.body.password
       })
 
       await user.save()
@@ -71,7 +66,7 @@ export class UsersController {
         .json({ id: user.id })
     } catch (error) {
       let err = error
-
+      console.log(err)
       if (err.code === 11000) {
         // Duplicated keys
         err = createError(409)
