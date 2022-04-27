@@ -30,7 +30,7 @@ export class UsersController {
         sub: user.id
       }
 
-      const accessToken = jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY_SECRET, 'base64').toString('ascii'), {
+      const accessToken = jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY, 'base64').toString('ascii'), {
         algorithm: 'RS256',
         expiresIn: process.env.PRIVATE_KEY_LIFE
       })
