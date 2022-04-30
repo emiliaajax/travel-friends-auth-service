@@ -10,6 +10,7 @@ import logger from 'morgan'
 import { router } from './routes/router.js'
 import { connectDB } from './config/mongoose.js'
 import helmet from 'helmet'
+import cors from 'cors'
 
 try {
   // Connects to MongoDB.
@@ -20,6 +21,8 @@ try {
 
   // Sets HTTP headers to make application more secure.
   app.use(helmet())
+
+  app.use(cors())
 
   // Sets up a morgan logger using the dev format for log entries.
   app.use(logger('dev'))
