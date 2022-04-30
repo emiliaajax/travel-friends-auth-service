@@ -5,6 +5,7 @@
  * @version 1.0.0
  */
 
+import fetch from 'node-fetch'
 import jwt from 'jsonwebtoken'
 import { User } from '../../models/user.js'
 import createError from 'http-errors'
@@ -30,25 +31,15 @@ export class UsersController {
         sub: user.id
       }
 
-      const accessToken = jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY, 'base64').toString('ascii'), {
-        algorithm: 'RS256',
-        expiresIn: process.env.PRIVATE_KEY_LIFE
-      })
+      const accessToken = this.genereateJWT(payload)
 
-      const randomToken = crypto.randomBytes(256).toString('hex')
-
-      const refreshToken = new RefreshToken({
-        userId: user.id,
-        refreshToken: randomToken
-      })
-
-      await refreshToken.save()
+      const refreshToken = this.generateRefreshToken(user.id)
 
       res
         .status(201)
         .json({
           access_token: accessToken,
-          refresh_token: randomToken
+          refresh_token: refreshToken
         })
     } catch (error) {
       const err = createError(401)
@@ -72,11 +63,43 @@ export class UsersController {
         password: req.body.password
       })
 
+      console.log(user.id)
+
+      const response = await fetch(process.env.USER_PROFILES_SERVICE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+          // 'X-API-Private-Token': process.env.PERSONAL_ACCESS_TOKEN
+        },
+        body: JSON.stringify({
+          userId: user.id
+        })
+      })
+
+      const data = await response.json()
+
+      const payload = {
+        sub: user.id
+      }
+
+      const accessToken = await this.genereateJWT(payload)
+
+      const refreshToken = await this.generateRefreshToken(user.id)
+
       await user.save()
+
+      console.log(accessToken)
+      console.log(refreshToken)
+      console.log(data)
 
       res
         .status(201)
-        .json({ id: user.id })
+        .json({
+          id: user.id,
+          profileId: data.id,
+          access_token: accessToken,
+          refresh_token: refreshToken
+        })
     } catch (error) {
       let err = error
       if (err.code === 11000) {
@@ -91,5 +114,37 @@ export class UsersController {
 
       next(err)
     }
+  }
+
+  /**
+   * Generates a jwt.
+   *
+   * @param {object} payload dasd.
+   * @returns {string} A jwt.
+   */
+  async genereateJWT (payload) {
+    return jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY, 'base64').toString('ascii'), {
+      algorithm: 'RS256',
+      expiresIn: process.env.PRIVATE_KEY_LIFE
+    })
+  }
+
+  /**
+   * Generates a refresh token.
+   *
+   * @param {string} id The id of the user.
+   * @returns {string} The generated refresh token.
+   */
+  async generateRefreshToken (id) {
+    const randomToken = crypto.randomBytes(256).toString('hex')
+
+    const refreshToken = new RefreshToken({
+      userId: id,
+      refreshToken: randomToken
+    })
+
+    await refreshToken.save()
+
+    return randomToken
   }
 }
