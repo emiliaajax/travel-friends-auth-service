@@ -50,6 +50,24 @@ export class UsersController {
   }
 
   /**
+   * Logging out a user.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async logout (req, res, next) {
+    try {
+      await RefreshToken.deleteOne({ userId: req.body.id })
+      res
+        .status(204)
+        .end()
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
    * Registers a user.
    *
    * @param {object} req Express request object.
@@ -62,8 +80,6 @@ export class UsersController {
         email: req.body.email,
         password: req.body.password
       })
-
-      console.log(user.id)
 
       const response = await fetch(process.env.USER_PROFILES_SERVICE, {
         method: 'POST',
