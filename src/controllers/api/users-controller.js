@@ -38,8 +38,8 @@ export class UsersController {
       res
         .status(201)
         .json({
-          access_token: accessToken,
-          refresh_token: refreshToken
+          accessToken,
+          refreshToken
         })
     } catch (error) {
       const err = createError(401)
@@ -88,17 +88,13 @@ export class UsersController {
 
       await user.save()
 
-      console.log(accessToken)
-      console.log(refreshToken)
-      console.log(data)
-
       res
         .status(201)
         .json({
           id: user.id,
           profileId: data.id,
-          access_token: accessToken,
-          refresh_token: refreshToken
+          accessToken,
+          refreshToken
         })
     } catch (error) {
       let err = error
