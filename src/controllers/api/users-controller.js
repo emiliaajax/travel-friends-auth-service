@@ -31,13 +31,21 @@ export class UsersController {
         sub: user.id
       }
 
-      const accessToken = this.genereateJWT(payload)
+      const accessToken = this.generateAccessToken(payload)
+      const refreshToken = this.generateRefreshToken()
 
-      const refreshToken = this.generateRefreshToken(user.id)
+      const token = new RefreshToken({
+        userId: user.id,
+        refreshToken
+      })
+
+      await token.save()
 
       res
         .status(201)
         .json({
+          id: user.id,
+          profileId: user.profileId,
           accessToken,
           refreshToken
         })
@@ -94,15 +102,23 @@ export class UsersController {
 
       const data = await response.json()
 
+      user.profileId = data.id
+
+      await user.save()
+
       const payload = {
         sub: user.id
       }
 
-      const accessToken = await this.genereateJWT(payload)
+      const accessToken = this.generateAccessToken(payload)
+      const refreshToken = this.generateRefreshToken()
 
-      const refreshToken = await this.generateRefreshToken(user.id)
+      const token = new RefreshToken({
+        userId: user.id,
+        refreshToken
+      })
 
-      await user.save()
+      await token.save()
 
       res
         .status(201)
@@ -129,12 +145,49 @@ export class UsersController {
   }
 
   /**
+   * Check if authenticated.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async checkIfValid (req, res, next) {
+    try {
+      const token = await RefreshToken.findOne({ userId: req.body.id, refreshToken: req.body.refreshToken })
+
+      if (!token) {
+        return next(createError(401))
+      }
+
+      const payload = {
+        sub: token.userId
+      }
+
+      const newAccessToken = this.generateAccessToken(payload)
+      const newRefreshToken = this.generateRefreshToken()
+
+      token.refreshToken = newRefreshToken
+
+      await token.save()
+
+      res
+        .status(201)
+        .json({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken
+        })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
    * Generates a jwt.
    *
    * @param {object} payload dasd.
    * @returns {string} A jwt.
    */
-  async genereateJWT (payload) {
+  generateAccessToken (payload) {
     return jwt.sign(payload, Buffer.from(process.env.PRIVATE_KEY, 'base64').toString('ascii'), {
       algorithm: 'RS256',
       expiresIn: process.env.PRIVATE_KEY_LIFE
@@ -144,19 +197,9 @@ export class UsersController {
   /**
    * Generates a refresh token.
    *
-   * @param {string} id The id of the user.
    * @returns {string} The generated refresh token.
    */
-  async generateRefreshToken (id) {
-    const randomToken = crypto.randomBytes(256).toString('hex')
-
-    const refreshToken = new RefreshToken({
-      userId: id,
-      refreshToken: randomToken
-    })
-
-    await refreshToken.save()
-
-    return randomToken
+  generateRefreshToken () {
+    return crypto.randomBytes(256).toString('hex')
   }
 }

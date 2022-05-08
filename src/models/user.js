@@ -22,6 +22,9 @@ const schema = new mongoose.Schema({
     required: true,
     minlength: [10, 'The password must be at least 8 characters.'],
     maxlength: [256, 'The password must be less than 256 characters.']
+  },
+  profileId: {
+    type: String
   }
 }, {
   timestamps: true,
