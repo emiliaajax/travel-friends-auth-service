@@ -89,15 +89,17 @@ export class UsersController {
         password: req.body.password
       })
 
+      const profile = {
+        userId: user.id
+      }
+
       const response = await fetch(process.env.USER_PROFILES_SERVICE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
           // 'X-API-Private-Token': process.env.PERSONAL_ACCESS_TOKEN
         },
-        body: JSON.stringify({
-          userId: user.id
-        })
+        body: JSON.stringify(profile)
       })
 
       const data = await response.json()
