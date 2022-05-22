@@ -7,6 +7,7 @@
 
 import fetch from 'node-fetch'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 import { User } from '../../models/user.js'
 import createError from 'http-errors'
 import crypto from 'crypto'
@@ -97,7 +98,6 @@ export class UsersController {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-          // 'X-API-Private-Token': process.env.PERSONAL_ACCESS_TOKEN
         },
         body: JSON.stringify(profile)
       })
@@ -105,6 +105,8 @@ export class UsersController {
       const data = await response.json()
 
       user.profileId = data.id
+
+      user.password = await bcrypt.hash(user.password, 10)
 
       await user.save()
 
@@ -143,6 +145,127 @@ export class UsersController {
       }
 
       next(err)
+    }
+  }
+
+  /**
+   * Finds user account.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async find (req, res, next) {
+    try {
+      const user = await User.findById(req.user.id)
+      if (!user) {
+        return next(createError(404))
+      }
+
+      res
+        .status(201)
+        .json(user.email)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Changes email.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async changeEmail (req, res, next) {
+    try {
+      const user = await User.findById(req.user.id)
+
+      if (!user) {
+        return next(createError(404))
+      }
+
+      user.email = req.body.email
+
+      await user.save()
+
+      res
+        .status(201)
+        .json(user.email)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Changes the password.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async changePassword (req, res, next) {
+    try {
+      const user = await User.findById(req.user.id)
+
+      await User.authenticate(user.email, req.body.currentPassword)
+
+      user.password = await bcrypt.hash(req.body.newPassword, 10)
+
+      await user.save()
+
+      const token = await RefreshToken.findOne({ userId: req.user.id })
+
+      const payload = {
+        sub: user.id
+      }
+
+      const newAccessToken = this.generateAccessToken(payload)
+      const newRefreshToken = this.generateRefreshToken()
+
+      token.refreshToken = newRefreshToken
+
+      await token.save()
+
+      res
+        .status(201)
+        .json({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken
+        })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  /**
+   * Deletes account.
+   *
+   * @param {object} req Express request object.
+   * @param {object} res Express response object.
+   * @param {Function} next Express next middleware function.
+   */
+  async delete (req, res, next) {
+    try {
+      const user = await User.findById(req.user.id)
+
+      await User.authenticate(user.email, req.body.password)
+
+      await fetch(process.env.USER_PROFILES_SERVICE + `${user.profileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: req.headers.authorization
+        }
+      })
+
+      await user.deleteOne()
+
+      res
+        .status(204)
+        .end()
+    } catch (error) {
+      next(error)
     }
   }
 

@@ -47,10 +47,10 @@ schema.virtual('id').get(function () {
   return this._id.toHexString()
 })
 
-// Before saving the password is salted and hashed.
-schema.pre('save', async function () {
-  this.password = await bcrypt.hash(this.password, 10)
-})
+// // Before saving the password is salted and hashed.
+// schema.pre('save', async function () {
+//   this.password = await bcrypt.hash(this.password, 10)
+// })
 
 /**
  * Authenticates an account.
