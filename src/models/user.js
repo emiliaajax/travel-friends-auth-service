@@ -15,13 +15,13 @@ const schema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
-    validate: [validator.isEmail, 'Please provide a valid email address.']
+    validate: [validator.isEmail, 'Ange en giltig e-mail']
   },
   password: {
     type: String,
     required: true,
-    minlength: [10, 'The password must be at least 8 characters.'],
-    maxlength: [256, 'The password must be less than 256 characters.']
+    minlength: [10, 'Lösenordet måste vara minst 10 tecken'],
+    maxlength: [1000, 'Lösenordet måste vara mindre än 256 tecken']
   },
   profileId: {
     type: String
@@ -46,11 +46,6 @@ const schema = new mongoose.Schema({
 schema.virtual('id').get(function () {
   return this._id.toHexString()
 })
-
-// // Before saving the password is salted and hashed.
-// schema.pre('save', async function () {
-//   this.password = await bcrypt.hash(this.password, 10)
-// })
 
 /**
  * Authenticates an account.

@@ -53,7 +53,7 @@ export class UsersController {
     } catch (error) {
       const err = createError(401)
       err.cause = error
-      err.message = 'E-mail or password are incorrect.'
+      err.message = 'E-mail eller lösenord är inkorrekt'
       next(err)
     }
   }
@@ -85,6 +85,18 @@ export class UsersController {
    */
   async register (req, res, next) {
     try {
+      if (req.body.password.length < 10) {
+        const err = createError(400)
+        err.message = 'Lösenordet måste vara minst 10 tecken'
+        return next(err)
+      }
+
+      if (req.body.password.length > 1000) {
+        const err = createError(400)
+        err.message = 'Lösenordet måste vara mindre än 1000 tecken'
+        return next(err)
+      }
+
       const user = new User({
         email: req.body.email,
         password: req.body.password
@@ -136,12 +148,9 @@ export class UsersController {
       let err = error
       if (err.code === 11000) {
         err = createError(409)
-        err.cause = error
-        err.message = 'E-mail is already in use.'
+        err.message = 'E-mail används redan'
       } else if (error.name === 'ValidationError') {
         err = createError(400)
-        err.cause = error
-        err.message = 'The request cannot or will not be processed due to something that is perceived to be a client error.'
       }
 
       next(err)
@@ -193,7 +202,15 @@ export class UsersController {
         .status(201)
         .json(user.email)
     } catch (error) {
-      next(error)
+      let err = error
+      if (err.code === 11000) {
+        err = createError(409)
+        err.message = 'E-mail används redan'
+      } else if (error.name === 'ValidationError') {
+        err = createError(400)
+      }
+
+      next(err)
     }
   }
 
@@ -206,6 +223,18 @@ export class UsersController {
    */
   async changePassword (req, res, next) {
     try {
+      if (req.body.newPassword.length < 10) {
+        const err = createError(400)
+        err.message = 'Lösenordet måste vara minst 10 tecken'
+        return next(err)
+      }
+
+      if (req.body.newPassword.length > 1000) {
+        const err = createError(400)
+        err.message = 'Lösenordet måste vara mindre än 1000 tecken'
+        return next(err)
+      }
+
       const user = await User.findById(req.user.id)
 
       await User.authenticate(user.email, req.body.currentPassword)
@@ -234,7 +263,10 @@ export class UsersController {
           refreshToken: newRefreshToken
         })
     } catch (error) {
-      next(error)
+      const err = createError(401)
+      err.cause = error
+      err.message = 'Lösenord är inkorrekt'
+      next(err)
     }
   }
 
