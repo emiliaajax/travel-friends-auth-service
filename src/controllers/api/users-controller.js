@@ -297,7 +297,10 @@ export class UsersController {
         .status(204)
         .end()
     } catch (error) {
-      next(error)
+      const err = createError(401)
+      err.cause = error
+      err.message = 'Lösenord är inkorrekt'
+      next(err)
     }
   }
 
