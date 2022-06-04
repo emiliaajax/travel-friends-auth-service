@@ -29,7 +29,8 @@ export class UsersController {
       const user = await User.authenticate(req.body.email, req.body.password)
 
       const payload = {
-        sub: user.id
+        sub: user.id,
+        profile: user.profileId
       }
 
       const accessToken = this.generateAccessToken(payload)
@@ -123,7 +124,8 @@ export class UsersController {
       await user.save()
 
       const payload = {
-        sub: user.id
+        sub: user.id,
+        profile: user.profileId
       }
 
       const accessToken = this.generateAccessToken(payload)
@@ -246,7 +248,8 @@ export class UsersController {
       const token = await RefreshToken.findOne({ userId: req.user.id })
 
       const payload = {
-        sub: user.id
+        sub: user.id,
+        profile: user.profileId
       }
 
       const newAccessToken = this.generateAccessToken(payload)
@@ -319,8 +322,11 @@ export class UsersController {
         return next(createError(401))
       }
 
+      const user = await User.findOne({ userId: req.body.id })
+
       const payload = {
-        sub: token.userId
+        sub: token.userId,
+        profile: user.profileId
       }
 
       const newAccessToken = this.generateAccessToken(payload)
